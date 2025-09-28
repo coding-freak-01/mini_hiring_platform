@@ -2,43 +2,8 @@ import { createServer, Model } from "miragejs";
 import { generateJobs, generateCandidates, generateAssessments } from "./seeds";
 import { db } from "../db";
 
-// Utility functions for latency and error simulation
-const simulateLatency = () => new Promise(resolve =>
-    setTimeout(resolve, Math.random() * 1000 + 200)
-);
-
-const shouldSimulateError = () => Math.random() < 0.08; // 8% error rate
-
-const handleError = (response) => {
-    if (shouldSimulateError()) {
-        response(500, { error: "Internal server error" });
-        return true;
-    }
-    return false;
-};
-
-async function loadFromIndexDB(server) {
-    try {
-        const jobs = await db.jobs.toArray();
-        const candidates = await db.candidates.toArray();
-        const assessments = await db.assessments.toArray();
-        const submissions = await db.submissions.toArray();
-        const timeline = await db.timeline.toArray();
-        const notes = await db.notes.toArray();
-
-        if (jobs.length) jobs.forEach(j => server.create("job", j));
-        if (candidates.length) candidates.forEach(c => server.create("candidate", c));
-        if (assessments.length) assessments.forEach(a => server.create("assessment", a));
-        if (submissions.length) submissions.forEach(s => server.create("submission", s));
-        if (timeline.length) timeline.forEach(t => server.create("timeline", t));
-        if (notes.length) notes.forEach(n => server.create("note", n));
-
-        return jobs.length > 0;
-    } catch (error) {
-        console.error("Error loading from IndexedDB:", error);
-        return false;
-    }
-}
+const simulateLatency = () =>
+    new Promise(res => setTimeout(res, Math.random() * 1000 + 200));
 
 export function makeServer() {
     return createServer({
@@ -52,281 +17,178 @@ export function makeServer() {
         },
 
         seeds: async (server) => {
-            const hasData = await loadFromIndexDB(server);
-
-            if (!hasData) {
-                // Only seed if no data exists
-                const jobs = generateJobs();
-                jobs.forEach(job => {
-                    server.create("job", job);
-                    db.jobs.put(job);
-                });
-
-                const candidates = generateCandidates(1000, jobs);
-                candidates.forEach(c => {
-                    server.create("candidate", c);
-                    db.candidates.put(c);
-                });
-
-                const assessments = generateAssessments(jobs);
-                assessments.forEach(a => {
-                    server.create("assessment", a);
-                    db.assessments.put(a);
-                });
+            // lets first check does indexedDB already have data?
+            const jobs = await db.jobs.toArray();
+            if (jobs.length > 0) {
+                jobs.forEach(j => server.create("job", j));
+                (await db.candidates.toArray()).forEach(c => server.create("candidate", c));
+                (await db.assessments.toArray()).forEach(a => server.create("assessment", a));
+                return;
             }
+
+            const jobData = generateJobs();
+            jobData.forEach(j => { server.create("job", j); db.jobs.put(j); });
+
+            const candidateData = generateCandidates(1000, jobData);
+            candidateData.forEach(c => { server.create("candidate", c); db.candidates.put(c); });
+
+            const assessmentData = generateAssessments(jobData);
+            assessmentData.forEach(a => { server.create("assessment", a); db.assessments.put(a); });
         },
 
         routes() {
             this.namespace = "/api";
 
-            // Jobs endpoints with pagination, filtering, and sorting
-            this.get("/jobs", async (schema, request) => {
+            // Jobs
+            this.get("/jobs", async (schema, req) => {
                 await simulateLatency();
-
-                const { search, status, page = 1, pageSize = 10, sort = "order" } = request.queryParams;
+                const { search, status, page = 1, pageSize = 10 } = req.queryParams;
                 let jobs = schema.jobs.all().models;
 
-                // Filtering
                 if (search) {
-                    jobs = jobs.filter(job =>
-                        job.title.toLowerCase().includes(search.toLowerCase()) ||
-                        job.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
+                    jobs = jobs.filter(j =>
+                        j.title.toLowerCase().includes(search.toLowerCase()) ||
+                        j.tags.some(t => t.toLowerCase().includes(search.toLowerCase()))
                     );
                 }
 
-                if (status) {
-                    jobs = jobs.filter(job => job.status === status);
-                }
+                if (status) jobs = jobs.filter(j => j.status === status);
 
-                // Sorting
-                if (sort === "title") {
-                    jobs.sort((a, b) => a.title.localeCompare(b.title));
-                } else if (sort === "created") {
-                    jobs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                } else {
-                    // Default order: active jobs first, then archived, each by order
-                    jobs.sort((a, b) => {
-                        if (a.status !== b.status) {
-                            // active before archived
-                            return a.status === 'active' ? -1 : 1;
-                        }
-                        return a.order - b.order;
-                    });
-                }
-
-                // Pagination
                 const start = (page - 1) * pageSize;
-                const end = start + parseInt(pageSize);
-                const paginatedJobs = jobs.slice(start, end);
+                const data = jobs.slice(start, start + +pageSize);
 
-                return {
-                    data: paginatedJobs,
-                    pagination: {
-                        page: parseInt(page),
-                        pageSize: parseInt(pageSize),
-                        total: jobs.length,
-                        totalPages: Math.ceil(jobs.length / pageSize)
-                    }
-                };
+                return { data, pagination: { page: +page, pageSize: +pageSize, total: jobs.length } };
             });
 
-            this.post("/jobs", async (schema, request) => {
+            this.post("/jobs", async (schema, req) => {
                 await simulateLatency();
 
-                if (handleError(this)) return;
+                // artificial network delay
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
 
-                const attrs = JSON.parse(request.requestBody);
+                const attrs = JSON.parse(req.requestBody);
+                const exists = schema.jobs.where({ slug: attrs.slug }).models[0];
 
-                // Check for duplicate slug
-                const existingJob = schema.jobs.where({ slug: attrs.slug }).models[0];
-                if (existingJob) {
-                    return this.response(400, { error: "Slug already exists" });
-                }
+                if (exists) return this.response(400, { error: "Slug already exists" });
 
-                const job = schema.jobs.create(attrs);
+                const job = schema.jobs.create(attrs); // updates the mirage in memory model
+                await db.jobs.put(job.attrs); // saves the updated data into indexedDB
+                return job;
+            });
+
+            this.patch("/jobs/:id", async (schema, req) => {
+                await simulateLatency();
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
+
+                const job = schema.jobs.find(req.params.id).update(JSON.parse(req.requestBody));
                 await db.jobs.put(job.attrs);
                 return job;
             });
 
-            this.patch("/jobs/:id", async (schema, request) => {
+            this.patch("/jobs/:id/reorder", async (schema, req) => {
                 await simulateLatency();
+                if (Math.random() < 0.2) return this.response(500, { error: "Injected 500 for reorder" });
 
-                if (handleError(this)) return;
-
-                const id = request.params.id;
-                const attrs = JSON.parse(request.requestBody);
-
-                // Check for duplicate slug if slug is being updated
-                if (attrs.slug) {
-                    const existingJob = schema.jobs.where({ slug: attrs.slug }).models.find(j => j.id !== id);
-                    if (existingJob) {
-                        return this.response(400, { error: "Slug already exists" });
-                    }
-                }
-
-                const job = schema.jobs.find(id).update(attrs);
-                await db.jobs.put(job.attrs);
-                return job;
-            });
-
-            this.patch("/jobs/:id/reorder", async (schema, request) => {
-                await simulateLatency();
-
-                if (handleError(this)) return;
-
-                const { fromOrder, toOrder } = JSON.parse(request.requestBody);
+                const { fromOrder, toOrder } = JSON.parse(req.requestBody);
                 const jobs = schema.jobs.all().models;
 
-                // Update order values
-                jobs.forEach(job => {
-                    if (job.order === fromOrder) {
-                        job.update({ order: toOrder });
-                    } else if (fromOrder < toOrder && job.order > fromOrder && job.order <= toOrder) {
-                        job.update({ order: job.order - 1 });
-                    } else if (fromOrder > toOrder && job.order < fromOrder && job.order >= toOrder) {
-                        job.update({ order: job.order + 1 });
-                    }
+                jobs.forEach(j => {
+                    if (j.order === fromOrder) j.update({ order: toOrder });
+                    else if (fromOrder < toOrder && j.order > fromOrder && j.order <= toOrder) j.update({ order: j.order - 1 });
+                    else if (fromOrder > toOrder && j.order < fromOrder && j.order >= toOrder) j.update({ order: j.order + 1 });
+                    db.jobs.put(j.attrs);
                 });
-
-                // Update IndexedDB
-                for (const job of jobs) {
-                    await db.jobs.put(job.attrs);
-                }
 
                 return { success: true };
             });
 
-            // Candidates endpoints
-            this.get("/candidates", async (schema, request) => {
+            // Candidates
+            this.get("/candidates", async (schema, req) => {
                 await simulateLatency();
-
-                const { search, stage, page = 1, pageSize = 20 } = request.queryParams;
+                const { search, stage, page = 1, pageSize = 20 } = req.queryParams;
                 let candidates = schema.candidates.all().models;
 
-                // Filtering
                 if (search) {
-                    candidates = candidates.filter(candidate =>
-                        candidate.name.toLowerCase().includes(search.toLowerCase()) ||
-                        candidate.email.toLowerCase().includes(search.toLowerCase())
+                    candidates = candidates.filter(c =>
+                        c.name.toLowerCase().includes(search.toLowerCase()) ||
+                        c.email.toLowerCase().includes(search.toLowerCase())
                     );
                 }
+                if (stage) candidates = candidates.filter(c => c.stage === stage);
 
-                if (stage) {
-                    candidates = candidates.filter(candidate => candidate.stage === stage);
-                }
-
-                // Pagination
                 const start = (page - 1) * pageSize;
-                const end = start + parseInt(pageSize);
-                const paginatedCandidates = candidates.slice(start, end);
+                const data = candidates.slice(start, start + +pageSize);
 
-                return {
-                    data: paginatedCandidates,
-                    pagination: {
-                        page: parseInt(page),
-                        pageSize: parseInt(pageSize),
-                        total: candidates.length,
-                        totalPages: Math.ceil(candidates.length / pageSize)
-                    }
-                };
+                return { data, pagination: { page: +page, pageSize: +pageSize, total: candidates.length } };
             });
 
             this.post("/candidates", async (schema, request) => {
                 await simulateLatency();
-
-                if (handleError(this)) return;
-
+            
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
+            
                 const attrs = JSON.parse(request.requestBody);
+
                 const candidate = schema.candidates.create(attrs);
                 await db.candidates.put(candidate.attrs);
                 return candidate;
             });
+            
 
-            this.patch("/candidates/:id", async (schema, request) => {
+            this.patch("/candidates/:id", async (schema, req) => {
                 await simulateLatency();
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
 
-                if (handleError(this)) return;
-
-                const id = request.params.id;
-                const attrs = JSON.parse(request.requestBody);
+                const id = req.params.id;
+                const attrs = JSON.parse(req.requestBody);
                 const candidate = schema.candidates.find(id);
 
-                // Create timeline entry for stage changes
                 if (attrs.stage && attrs.stage !== candidate.stage) {
-                    const timelineEntry = schema.timeline.create({
+                    const entry = schema.timeline.create({
+                        id: Date.now(),
                         candidateId: id,
-                        event: "stage_change",
-                        fromStage: candidate.stage,
-                        toStage: attrs.stage,
-                        timestamp: new Date().toISOString()
+                        from: candidate.stage,
+                        to: attrs.stage
                     });
-                    await db.timeline.put(timelineEntry.attrs);
+                    await db.timeline.put(entry.attrs);
                 }
 
-                const updatedCandidate = candidate.update(attrs);
-                await db.candidates.put(updatedCandidate.attrs);
-                return updatedCandidate;
+                const updated = candidate.update(attrs);
+                await db.candidates.put(updated.attrs);
+                return updated;
             });
 
-            this.get("/candidates/:id/timeline", async (schema, request) => {
+            this.get("/candidates/:id/timeline", async (schema, req) => {
                 await simulateLatency();
-
-                const candidateId = request.params.id;
-                const timeline = schema.timeline.where({ candidateId: candidateId }).models;
-                return timeline.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                return schema.timeline.where({ candidateId: req.params.id }).models;
             });
 
-            // Assessments endpoints
-            this.get("/assessments/:jobId", async (schema, request) => {
+            // Assessments
+            this.get("/assessments/:jobId", async (schema, req) => {
                 await simulateLatency();
-
-                const jobId = request.params.jobId;
-                const assessment = schema.assessments.where({ jobId: Number(jobId) }).models[0];
-
-                if (!assessment) {
-                    return this.response(404, { error: "Assessment not found" });
-                }
-
-                return assessment;
+                return schema.assessments.where({ jobId: +req.params.jobId }).models[0] || this.response(404);
             });
 
-            this.put("/assessments/:jobId", async (schema, request) => {
+            this.put("/assessments/:jobId", async (schema, req) => {
                 await simulateLatency();
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
 
-                if (handleError(this)) return;
-
-                const jobId = request.params.jobId;
-                const attrs = JSON.parse(request.requestBody);
-
-                let assessment = schema.assessments.where({ jobId: Number(jobId) }).models[0];
-
-                if (assessment) {
-                    assessment = assessment.update(attrs);
-                } else {
-                    assessment = schema.assessments.create({ ...attrs, jobId: Number(jobId) });
-                }
-
-                await db.assessments.put(assessment.attrs);
-                return assessment;
+                const jobId = +req.params.jobId;
+                const attrs = JSON.parse(req.requestBody);
+                let a = schema.assessments.where({ jobId }).models[0];
+                a = a ? a.update(attrs) : schema.assessments.create({ ...attrs, jobId });
+                await db.assessments.put(a.attrs);
+                return a;
             });
 
-            this.post("/assessments/:jobId/submit", async (schema, request) => {
+            this.post("/assessments/:jobId/submit", async (schema, req) => {
                 await simulateLatency();
+                if (Math.random() < 0.08) return this.response(500, { error: "Random error" });
 
-                if (handleError(this)) return;
-
-                const jobId = request.params.jobId;
-                const data = JSON.parse(request.requestBody);
-
-                const submission = schema.submissions.create({
-                    jobId: Number(jobId),
-                    candidateId: data.candidateId,
-                    responses: data.responses,
-                    submittedAt: new Date().toISOString()
-                });
-
-                await db.submissions.put(submission.attrs);
-                return { status: "submitted", id: submission.id };
+                const { candidateId, responses } = JSON.parse(req.requestBody);
+                const sub = schema.submissions.create({ id: Date.now(), jobId: +req.params.jobId, candidateId, responses });
+                await db.submissions.put(sub.attrs);
+                return { status: "submitted", id: sub.id };
             });
         },
     });

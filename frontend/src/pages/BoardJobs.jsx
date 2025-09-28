@@ -109,7 +109,7 @@ const SortableJobRow = ({ job, onEdit, onArchive, onDelete, onApply, isCandidate
     )
 }
 
-const JobsBoard = () => {
+const BoardJobs = () => {
     const { jobId } = useParams()
     const navigate = useNavigate()
     const { jobs, loading, error, fetchJobs, createJob, updateJob, reorderJobs } = useJobStore()
@@ -452,4 +452,4 @@ const JobsBoard = () => {
     )
 }
 
-export default JobsBoard
+export default BoardJobs

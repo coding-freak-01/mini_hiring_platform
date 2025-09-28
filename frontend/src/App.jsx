@@ -4,7 +4,7 @@ import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import Login from './pages/Login'
 import Unauthorized from './pages/Unauthorized'
-import JobsBoard from './pages/JobsBoard'
+import BoardJobs from './pages/BoardJobs'
 import CandidatesList from './pages/CandidatesList'
 import KanbanBoard from './pages/KanbanBoard'
 import CandidateProfile from './pages/CandidateProfile'
@@ -28,14 +28,14 @@ const App = () => {
       <Route path="/jobs" element={
         <ProtectedRoute>
           <Layout>
-            <JobsBoard />
+            <BoardJobs />
           </Layout>
         </ProtectedRoute>
       } />
       <Route path="/jobs/:jobId" element={
         <ProtectedRoute>
           <Layout>
-            <JobsBoard />
+            <BoardJobs />
           </Layout>
         </ProtectedRoute>
       } />

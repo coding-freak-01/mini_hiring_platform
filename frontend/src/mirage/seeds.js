@@ -1,29 +1,18 @@
 const stages = ["applied", "screen", "tech", "offer", "hired", "rejected"];
 
 const jobTitles = [
-    "Senior Frontend Developer", "Full Stack Engineer", "React Developer", "Node.js Developer",
-    "Python Developer", "DevOps Engineer", "UI/UX Designer", "Product Manager", "Data Scientist",
-    "Machine Learning Engineer", "Backend Developer", "Mobile App Developer", "QA Engineer",
-    "Technical Lead", "Software Architect", "Cloud Engineer", "Security Engineer", "Database Administrator",
-    "System Administrator", "Business Analyst", "Project Manager", "Scrum Master", "Technical Writer",
-    "Sales Engineer", "Customer Success Manager"
+    "Senior Frontend Developer", "Full Stack Engineer", "React Developer", "Node.js Developer", "Python Developer", "DevOps Engineer", "UI/UX Designer", "Product Manager", "Data Scientist", "Machine Learning Engineer", "Backend Developer", "Mobile App Developer", "QA Engineer", "Technical Lead", "Software Architect", "Cloud Engineer", "Security Engineer", "Database Administrator", "System Administrator", "Business Analyst", "Project Manager", "Scrum Master", "Technical Writer", "Sales Engineer", "Customer Success Manager"
 ];
 
 const candidateNames = [
-    "Alex Johnson", "Sarah Chen", "Michael Rodriguez", "Emily Davis", "David Kim",
-    "Lisa Wang", "James Brown", "Maria Garcia", "Robert Taylor", "Jennifer Lee",
-    "Christopher Wilson", "Amanda Martinez", "Daniel Anderson", "Jessica Thompson", "Matthew White",
-    "Ashley Jackson", "Andrew Harris", "Stephanie Clark", "Ryan Lewis", "Nicole Walker",
-    "Kevin Hall", "Rachel Green", "Brandon Adams", "Samantha Turner", "Justin Scott"
+    "Alex Johnson", "Sarah Chen", "Michael Rodriguez", "Emily Davis", "David Kim", "Lisa Wang", "James Brown", "Maria Garcia", "Robert Taylor", "Jennifer Lee", "Christopher Wilson", "Amanda Martinez", "Daniel Anderson", "Jessica Thompson", "Matthew White", "Ashley Jackson", "Andrew Harris", "Stephanie Clark", "Ryan Lewis", "Nicole Walker", "Kevin Hall", "Rachel Green", "Brandon Adams", "Samantha Turner", "Justin Scott"
 ];
 
 const tags = [
-    "remote", "full-time", "part-time", "contract", "senior", "junior", "mid-level",
-    "frontend", "backend", "full-stack", "react", "node", "python", "javascript",
-    "typescript", "aws", "docker", "kubernetes", "agile", "startup", "enterprise"
+    "remote", "full-time", "part-time", "contract", "senior", "junior", "mid-level", "frontend", "backend", "full-stack", "react", "node", "python", "javascript", "typescript", "aws", "docker", "kubernetes", "agile", "startup", "enterprise"
 ];
 
-// 25 realistic jobs
+// 25 jobs
 export function generateJobs() {
     return Array.from({ length: 25 }, (_, i) => ({
         id: i + 1,
@@ -31,12 +20,11 @@ export function generateJobs() {
         slug: jobTitles[i].toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         status: i % 4 === 0 ? "archived" : "active",
         tags: tags.slice(i % 5, (i % 5) + 3),
-        order: i + 1,
-        createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+        order: i + 1
     }));
 }
 
-// 1000 realistic candidates
+// 1000 candidates
 export function generateCandidates(num, jobs) {
     return Array.from({ length: num }, (_, i) => {
         const job = jobs[Math.floor(Math.random() * jobs.length)];
@@ -49,13 +37,12 @@ export function generateCandidates(num, jobs) {
             name: `${firstName} ${lastName}${i >= candidateNames.length ? ` ${Math.floor(i / candidateNames.length) + 1}` : ''}`,
             email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i >= candidateNames.length ? Math.floor(i / candidateNames.length) + 1 : ''}@email.com`,
             jobId: job.id,
-            stage: stages[Math.floor(Math.random() * stages.length)],
-            createdAt: new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString(),
+            stage: stages[Math.floor(Math.random() * stages.length)]
         };
     });
 }
 
-// Enhanced assessments with multiple question types
+// assessments part
 export function generateAssessments(jobs) {
     const questionTypes = [
         { type: "short-text", label: "What is your experience with this technology?" },
@@ -100,8 +87,6 @@ export function generateAssessments(jobs) {
                     maxLength: 1000
                 }))
             }
-        ],
-        createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date().toISOString()
+        ]
     }));
 }

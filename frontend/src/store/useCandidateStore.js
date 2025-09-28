@@ -56,16 +56,18 @@ const useCandidateStore = create((set, get) => ({
 
     // PATCH /candidates/:id
     updateCandidate: async (id, updates) => {
+        set({loading: true});
         try {
             const res = await apiClient.patch(`/candidates/${id}`, updates);
             const updatedCandidate = res.data;
 
             set({
                 candidates: get().candidates.map((c) => (c.id === id ? updatedCandidate : c)),
+                loading: false
             });
             await db.candidates.put(updatedCandidate);
         } catch (err) {
-            set({ error: err.message });
+            set({ error: err.message, loading: false });
         }
     },
 

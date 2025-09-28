@@ -44,6 +44,7 @@ const useJobStore = create((set, get) => ({
 
     // PATCH /jobs/:id
     updateJob: async (id, updates) => {
+        set({ loading: true });
         try {
             const res = await apiClient.patch(`/jobs/${id}`, updates);
             const updatedJob = res.data;
@@ -52,13 +53,15 @@ const useJobStore = create((set, get) => ({
                 jobs: get().jobs.map((j) => (j.id === id ? updatedJob : j)),
             });
             await db.jobs.put(updatedJob);
+            set({loading: false})
         } catch (err) {
-            set({ error: err.message });
+            set({ error: err.message, loading: false });
         }
     },
 
     // PATCH /jobs/:id/reorder
     reorderJobs: async (fromOrder, toOrder) => {
+        set({loading: true})
         try {
             // Find the job with the fromOrder to get its ID
             const job = get().jobs.find(j => j.order === fromOrder);
@@ -72,10 +75,12 @@ const useJobStore = create((set, get) => ({
                 // Refresh jobs after successful reorder
                 await get().fetchJobs();
             }
+            set({loading: false})
         } catch (err) {
             // Simulate rollback if Mirage returns 500
             set({ error: "Reorder failed, rolled back" });
             await get().fetchJobs();
+            set({loading: false})
         }
     },
 }));
