@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, User, Mail, Phone, FileText } from 'lucide-react'
+import { ArrowLeft, Send, User, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useCandidateStore from '../store/useCandidateStore'
 import useAuthStore from '../store/useAuthStore'
@@ -13,24 +13,14 @@ const CandidateJobApplication = () => {
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
         name: user?.name || '',
-        email: user?.email || '',
-        phone: '',
-        coverLetter: '',
-        resume: null
+        email: user?.email || ''
     })
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
-        setFormData(prev => ({
+        setFormData((prev) => ({
             ...prev,
             [name]: value
-        }))
-    }
-
-    const handleFileChange = (e) => {
-        setFormData(prev => ({
-            ...prev,
-            resume: e.target.files[0]
         }))
     }
 
@@ -42,12 +32,9 @@ const CandidateJobApplication = () => {
             await createCandidate({
                 name: formData.name,
                 email: formData.email,
-                phone: formData.phone,
                 jobId: parseInt(jobId),
                 stage: 'applied',
-                coverLetter: formData.coverLetter,
-                resume: formData.resume?.name || null,
-                appliedAt: new Date().toISOString()
+                createdAt: new Date().toISOString()
             })
 
             toast.success('Application submitted successfully!')
@@ -79,114 +66,45 @@ const CandidateJobApplication = () => {
             <div className="bg-white shadow rounded-lg">
                 <div className="px-6 py-4 border-b border-gray-200">
                     <h2 className="text-lg font-medium text-gray-900">Application Form</h2>
-                    <p className="text-sm text-gray-500">Please fill out the form below to apply for this position.</p>
+                    <p className="text-sm text-gray-500">Fill out your details to apply for this job.</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* Personal Information */}
-                    <div className="space-y-4">
-                        <h3 className="text-md font-medium text-gray-900">Personal Information</h3>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Full Name *
-                                </label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value={formData.name}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter your full name"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Email *
-                                </label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        value={formData.email}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter your email"
-                                    />
-                                </div>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Full Name *
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={formData.name}
+                                    onChange={handleInputChange}
+                                    required
+                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Enter your full name"
+                                />
                             </div>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Phone Number
+                                Email *
                             </label>
                             <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                 <input
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
                                     onChange={handleInputChange}
+                                    required
                                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="Enter your phone number"
+                                    placeholder="Enter your email"
                                 />
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Cover Letter */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Cover Letter
-                        </label>
-                        <div className="relative">
-                            <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                            <textarea
-                                name="coverLetter"
-                                value={formData.coverLetter}
-                                onChange={handleInputChange}
-                                rows={4}
-                                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Tell us why you're interested in this position..."
-                            />
-                        </div>
-                    </div>
-
-                    {/* Resume Upload */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Resume (Optional)
-                        </label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                            <input
-                                type="file"
-                                name="resume"
-                                onChange={handleFileChange}
-                                accept=".pdf,.doc,.docx"
-                                className="hidden"
-                                id="resume-upload"
-                            />
-                            <label
-                                htmlFor="resume-upload"
-                                className="cursor-pointer flex flex-col items-center"
-                            >
-                                <FileText className="h-8 w-8 text-gray-400 mb-2" />
-                                <span className="text-sm text-gray-600">
-                                    {formData.resume ? formData.resume.name : 'Click to upload resume'}
-                                </span>
-                                <span className="text-xs text-gray-500 mt-1">
-                                    PDF, DOC, DOCX up to 10MB
-                                </span>
-                            </label>
                         </div>
                     </div>
 

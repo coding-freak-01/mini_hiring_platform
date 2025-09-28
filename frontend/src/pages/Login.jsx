@@ -13,7 +13,7 @@ const Login = () => {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault()
         setLoading(true)
 
@@ -22,21 +22,17 @@ const Login = () => {
 
             if (result.success) {
                 toast.success(`Welcome ${userType === 'admin' ? 'HR Manager' : 'Candidate'}!`)
-
-                if (userType === 'admin') {
-                    navigate('/jobs')
-                } else {
-                    navigate('/jobs') // Candidates can also see jobs to apply
-                }
+                navigate('/jobs')
             } else {
                 toast.error(result.error || 'Login failed')
             }
-        } catch (error) {
+        } catch {
             toast.error('Login failed')
         } finally {
             setLoading(false)
         }
     }
+
 
     const handleDemoLogin = (type) => {
         if (type === 'admin') {
@@ -78,8 +74,8 @@ const Login = () => {
                                 type="button"
                                 onClick={() => setUserType('admin')}
                                 className={`flex items-center justify-center px-4 py-3 border rounded-md ${userType === 'admin'
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <Briefcase className="h-5 w-5 mr-2" />
@@ -89,8 +85,8 @@ const Login = () => {
                                 type="button"
                                 onClick={() => setUserType('candidate')}
                                 className={`flex items-center justify-center px-4 py-3 border rounded-md ${userType === 'candidate'
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                        : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                                     }`}
                             >
                                 <Users className="h-5 w-5 mr-2" />
