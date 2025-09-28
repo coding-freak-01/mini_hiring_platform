@@ -10,6 +10,7 @@ import KanbanBoard from './pages/KanbanBoard'
 import CandidateProfile from './pages/CandidateProfile'
 import AssessmentBuilder from './pages/AssessmentBuilder'
 import AssessmentRuntime from './pages/AssessmentRuntime'
+import AssessmentsList from './pages/AssessmentsList'
 import CandidateJobApplication from './pages/CandidateJobApplication'
 import TestPage from './pages/TestPage'
 import Profile from './pages/Profile'
@@ -72,6 +73,14 @@ const App = () => {
         <ProtectedRoute requiredUserType="admin">
           <Layout>
             <KanbanBoard />
+          </Layout>
+        </ProtectedRoute>
+      } />
+
+      <Route path="/assessments" element={
+        <ProtectedRoute requiredUserType="admin">
+          <Layout>
+            <AssessmentsList />
           </Layout>
         </ProtectedRoute>
       } />

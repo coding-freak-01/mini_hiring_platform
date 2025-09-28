@@ -22,7 +22,10 @@ const useCandidateStore = create((set, get) => ({
 
             set({
                 candidates: data.data || data,
-                pagination: data.pagination || { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+                pagination: {
+                    ...data.pagination,
+                    totalPages: Math.ceil(data.pagination.total / data.pagination.pageSize),
+                },
                 loading: false
             });
 
@@ -56,7 +59,7 @@ const useCandidateStore = create((set, get) => ({
 
     // PATCH /candidates/:id
     updateCandidate: async (id, updates) => {
-        set({loading: true});
+        set({ loading: true });
         try {
             const res = await apiClient.patch(`/candidates/${id}`, updates);
             const updatedCandidate = res.data;
@@ -85,6 +88,40 @@ const useCandidateStore = create((set, get) => ({
     // Get candidate by ID
     getCandidateById: (id) => {
         return get().candidates.find(c => c.id === id);
+    },
+
+    // Fetch single candidate by ID from API
+    fetchCandidateById: async (id) => {
+        set({ loading: true, error: null });
+        try {
+            const res = await apiClient.get(`/candidates/${id}`);
+            const candidate = res.data;
+            
+            // Update the candidates array with this candidate
+            const currentCandidates = get().candidates;
+            const existingIndex = currentCandidates.findIndex(c => c.id === candidate.id);
+            let updatedCandidates;
+            
+            if (existingIndex >= 0) {
+                updatedCandidates = currentCandidates.map(c => c.id === candidate.id ? candidate : c);
+            } else {
+                updatedCandidates = [...currentCandidates, candidate];
+            }
+            
+            set({ candidates: updatedCandidates, loading: false });
+            await db.candidates.put(candidate);
+            return candidate;
+        } catch (err) {
+            set({ error: err.message, loading: false });
+            
+            // Fallback to IndexedDB
+            const cached = await db.candidates.get(parseInt(id));
+            if (cached) {
+                set({ candidates: [...get().candidates, cached] });
+                return cached;
+            }
+            throw err;
+        }
     },
 
     // Get candidates by stage for Kanban

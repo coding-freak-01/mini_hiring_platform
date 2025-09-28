@@ -1,7 +1,7 @@
 // pages/KanbanBoard.jsx
 import React, { useState, useEffect, useCallback } from 'react'
-import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
+import { DndContext, DragOverlay, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core'
+import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -46,7 +46,20 @@ const KanbanBoard = () => {
         if (!over || active.id === over.id) return
 
         const candidate = candidates.find((c) => c.id === active.id)
-        const newStage = over.id
+        if (!candidate) return
+
+        // Check if dropped on a stage column (over.id is a stage) or on another candidate
+        let newStage = over.id
+        
+        // If dropped on another candidate, get the stage of that candidate
+        const targetCandidate = candidates.find((c) => c.id === over.id)
+        if (targetCandidate) {
+            newStage = targetCandidate.stage
+        }
+
+        // Check if it's a valid stage
+        const validStages = stages.map(s => s.id)
+        if (!validStages.includes(newStage)) return
 
         if (candidate.stage === newStage) return
 
@@ -87,16 +100,18 @@ const KanbanBoard = () => {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-                    {stages.map((stage) => (
-                        <StageColumn
-                            key={stage.id}
-                            stage={stage}
-                            candidates={getCandidatesByStage(stage.id)}
-                            onViewProfile={handleViewProfile}
-                        />
-                    ))}
-                </div>
+                <SortableContext items={candidates.map(c => c.id)}>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                        {stages.map((stage) => (
+                            <StageColumn
+                                key={stage.id}
+                                stage={stage}
+                                candidates={getCandidatesByStage(stage.id)}
+                                onViewProfile={handleViewProfile}
+                            />
+                        ))}
+                    </div>
+                </SortableContext>
 
                 <DragOverlay>
                     {activeCandidate && (

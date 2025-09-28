@@ -8,7 +8,7 @@ import useCandidateStore from '../store/useCandidateStore'
 const CandidateProfile = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    const { getCandidateById, fetchCandidateTimeline } = useCandidateStore()
+    const { getCandidateById, fetchCandidateById, fetchCandidateTimeline } = useCandidateStore()
 
     const [candidate, setCandidate] = useState(null)
     const [timeline, setTimeline] = useState([])
@@ -17,20 +17,31 @@ const CandidateProfile = () => {
     const [newNote, setNewNote] = useState('')
 
     useEffect(() => {
-        fetchCandidateData()
-        fetchTimelineData()
+        const loadData = async () => {
+            await fetchCandidateData()
+            await fetchTimelineData()
+        }
+        loadData()
     }, [id])
 
-    const fetchCandidateData = () => {
+    const fetchCandidateData = async () => {
         try {
-            const candidateData = getCandidateById(parseInt(id))
+            // First try to get from store
+            let candidateData = getCandidateById(parseInt(id))
+
+            // If not in store, fetch from API
+            if (!candidateData) {
+                candidateData = await fetchCandidateById(parseInt(id))
+            }
+
             if (candidateData) {
                 setCandidate(candidateData)
             } else {
                 toast.error('Candidate not found')
                 navigate('/candidates')
             }
-        } catch {
+        } catch (error) {
+            console.error('Failed to fetch candidate:', error)
             toast.error('Failed to fetch candidate')
             navigate('/candidates')
         } finally {

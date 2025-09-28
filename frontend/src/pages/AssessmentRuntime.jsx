@@ -149,6 +149,10 @@ const AssessmentRuntime = () => {
         )
     }
 
+    if (!assessment) {
+        return <p className="text-red-500">No assessment available for this job.</p>
+    }
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             {/* Header */}

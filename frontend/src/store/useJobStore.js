@@ -4,6 +4,7 @@ import { db } from "../db"; // Dexie
 
 const useJobStore = create((set, get) => ({
     jobs: [],
+    pagination: null,
     loading: false,
     error: null,
 
@@ -12,13 +13,18 @@ const useJobStore = create((set, get) => ({
         set({ loading: true, error: null });
         try {
             const res = await apiClient.get("/jobs", { params });
-            const jobs = res.data.data || res.data;
 
-            set({ jobs, loading: false });
+            // Expect Mirage to return { data, pagination }
+            const jobs = res.data.data || [];
+            const pagination = res.data.pagination || null;
+
+            set({ jobs, pagination, loading: false });
 
             // Mirror to IndexedDB
             await db.jobs.clear();
             jobs.forEach((j) => db.jobs.put(j));
+
+            return res.data; // so BoardJobs.jsx can use pagination
         } catch (err) {
             set({ error: err.message, loading: false });
 
@@ -27,6 +33,7 @@ const useJobStore = create((set, get) => ({
             if (cached.length) set({ jobs: cached });
         }
     },
+
 
     // POST /jobs
     createJob: async (jobData) => {
@@ -53,7 +60,7 @@ const useJobStore = create((set, get) => ({
                 jobs: get().jobs.map((j) => (j.id === id ? updatedJob : j)),
             });
             await db.jobs.put(updatedJob);
-            set({loading: false})
+            set({ loading: false })
         } catch (err) {
             set({ error: err.message, loading: false });
         }
@@ -61,26 +68,26 @@ const useJobStore = create((set, get) => ({
 
     // PATCH /jobs/:id/reorder
     reorderJobs: async (fromOrder, toOrder) => {
-        set({loading: true})
+        set({ loading: true })
         try {
             // Find the job with the fromOrder to get its ID
             const job = get().jobs.find(j => j.order === fromOrder);
             if (!job) {
                 throw new Error('Job not found');
             }
-            
+
             const res = await apiClient.patch(`/jobs/${job.id}/reorder`, { fromOrder, toOrder });
-            
+
             if (res.data.success) {
                 // Refresh jobs after successful reorder
                 await get().fetchJobs();
             }
-            set({loading: false})
+            set({ loading: false })
         } catch (err) {
             // Simulate rollback if Mirage returns 500
             set({ error: "Reorder failed, rolled back" });
             await get().fetchJobs();
-            set({loading: false})
+            set({ loading: false })
         }
     },
 }));

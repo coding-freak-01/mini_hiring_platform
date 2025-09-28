@@ -15,13 +15,12 @@ import SortableJobRow from '../components/SortableJobRow'
 const BoardJobs = () => {
     const { jobId } = useParams()
     const navigate = useNavigate()
-    const { jobs, loading, fetchJobs, createJob, updateJob, reorderJobs } = useJobStore()
+    const { jobs, loading, pagination, fetchJobs, createJob, updateJob, reorderJobs } = useJobStore()
     const { isCandidate } = useAuthStore()
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState('')
     const [sortBy, setSortBy] = useState('order')
     const [currentPage, setCurrentPage] = useState(1)
-    const [totalPages, setTotalPages] = useState(1)
     const [showModal, setShowModal] = useState(false)
     const [editingJob, setEditingJob] = useState(null)
 
@@ -34,9 +33,10 @@ const BoardJobs = () => {
         const effectiveStatus = isCandidate() && !statusFilter ? 'active' : statusFilter
         const params = { search, status: effectiveStatus, page: currentPage, pageSize: 10, sort: sortBy }
 
+        console.log('Fetching jobs with params:', params) // Debug log
         try {
-            const res = await fetchJobs(params)
-            if (res?.pagination?.totalPages) setTotalPages(res.pagination.totalPages)
+            const result = await fetchJobs(params)
+            console.log('Jobs fetched:', result) // Debug log
         } catch (err) {
             console.error('Error fetching jobs:', err)
         }
@@ -76,6 +76,10 @@ const BoardJobs = () => {
         } catch {
             toast.error('Failed to delete job')
         }
+    }
+
+    const handleManageAssessment = (job) => {
+        navigate(`/assessments/${job.id}`)
     }
 
     const handleDragEnd = async ({ active, over }) => {
@@ -226,6 +230,7 @@ const BoardJobs = () => {
                                             onArchive={handleArchiveJob}
                                             onDelete={handleDeleteJob}
                                             onApply={(j) => navigate(`/jobs/${j.id}/apply`)}
+                                            onManageAssessment={handleManageAssessment}
                                             isCandidate={isCandidate()}
                                         />
                                     ))}
@@ -237,10 +242,10 @@ const BoardJobs = () => {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-700">
-                        Showing page {currentPage} of {totalPages}
+                        Showing page {currentPage} of {pagination.totalPages}
                     </div>
                     <div className="flex space-x-2">
                         <button
@@ -251,8 +256,8 @@ const BoardJobs = () => {
                             Previous
                         </button>
                         <button
-                            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                            disabled={currentPage === totalPages}
+                            onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
+                            disabled={currentPage === pagination.totalPages}
                             className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50"
                         >
                             Next

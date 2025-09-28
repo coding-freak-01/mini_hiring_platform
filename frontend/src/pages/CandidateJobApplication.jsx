@@ -1,20 +1,41 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Send, User, Mail } from 'lucide-react'
+import { ArrowLeft, Send, User, Mail, FileText, Eye } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useCandidateStore from '../store/useCandidateStore'
 import useAuthStore from '../store/useAuthStore'
+import useAssessmentStore from '../store/useAssessmentStore'
 
 const CandidateJobApplication = () => {
     const { jobId } = useParams()
     const navigate = useNavigate()
     const { createCandidate } = useCandidateStore()
     const { user } = useAuthStore()
+    const { assessments, fetchAssessment } = useAssessmentStore()
     const [loading, setLoading] = useState(false)
+    const [assessmentLoading, setAssessmentLoading] = useState(false)
+    const [hasAssessment, setHasAssessment] = useState(false)
     const [formData, setFormData] = useState({
         name: user?.name || '',
         email: user?.email || ''
     })
+
+    useEffect(() => {
+        checkForAssessment()
+    }, [jobId])
+
+    const checkForAssessment = async () => {
+        setAssessmentLoading(true)
+        try {
+            await fetchAssessment(jobId)
+            const assessment = assessments[jobId]
+            setHasAssessment(assessment && assessment.sections && assessment.sections.length > 0)
+        } catch (error) {
+            console.error('Error checking for assessment:', error)
+        } finally {
+            setAssessmentLoading(false)
+        }
+    }
 
     const handleInputChange = (e) => {
         const { name, value } = e.target
@@ -107,6 +128,34 @@ const CandidateJobApplication = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Assessment Section */}
+                    {assessmentLoading ? (
+                        <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-600 border-t-transparent"></div>
+                            <span className="ml-2 text-sm text-gray-600">Checking for assessment...</span>
+                        </div>
+                    ) : hasAssessment ? (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center mb-2">
+                                <FileText className="h-5 w-5 text-blue-600 mr-2" />
+                                <h3 className="text-sm font-medium text-blue-900">Assessment Available</h3>
+                            </div>
+                            <p className="text-sm text-blue-700 mb-3">
+                                This job requires completing an assessment. You can take it now or after submitting your application.
+                            </p>
+                            <div className="flex space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => navigate(`/assessments/${jobId}/take`)}
+                                    className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-700 bg-blue-100 border border-blue-300 rounded-md hover:bg-blue-200"
+                                >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Take Assessment Now
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
 
                     {/* Submit Button */}
                     <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">

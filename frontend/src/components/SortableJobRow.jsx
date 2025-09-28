@@ -2,9 +2,9 @@
 import React from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Edit, Archive, ArchiveRestore, Trash2 } from 'lucide-react'
+import { GripVertical, Edit, Archive, ArchiveRestore, Trash2, FileText, Eye } from 'lucide-react'
 
-const SortableJobRow = ({ job, onEdit, onArchive, onDelete, onApply, isCandidate }) => {
+const SortableJobRow = ({ job, onEdit, onArchive, onDelete, onApply, onManageAssessment, isCandidate }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: job.id })
 
     const style = {
@@ -57,13 +57,16 @@ const SortableJobRow = ({ job, onEdit, onArchive, onDelete, onApply, isCandidate
                         </button>
                     ) : (
                         <>
-                            <button onClick={() => onEdit(job)} className="text-blue-600 hover:text-blue-900">
+                            <button onClick={() => onEdit(job)} className="text-blue-600 hover:text-blue-900" title="Edit Job">
                                 <Edit className="h-4 w-4" />
                             </button>
-                            <button onClick={() => onArchive(job)} className="text-yellow-600 hover:text-yellow-900">
+                            <button onClick={() => onManageAssessment(job)} className="text-green-600 hover:text-green-900" title="Manage Assessment">
+                                <FileText className="h-4 w-4" />
+                            </button>
+                            <button onClick={() => onArchive(job)} className="text-yellow-600 hover:text-yellow-900" title={job.status === 'active' ? 'Archive Job' : 'Restore Job'}>
                                 {job.status === 'active' ? <Archive className="h-4 w-4" /> : <ArchiveRestore className="h-4 w-4" />}
                             </button>
-                            <button onClick={() => onDelete(job)} className="text-red-600 hover:text-red-900">
+                            <button onClick={() => onDelete(job)} className="text-red-600 hover:text-red-900" title="Delete Job">
                                 <Trash2 className="h-4 w-4" />
                             </button>
                         </>
