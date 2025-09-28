@@ -12,7 +12,6 @@ import AssessmentBuilder from './pages/AssessmentBuilder'
 import AssessmentRuntime from './pages/AssessmentRuntime'
 import AssessmentsList from './pages/AssessmentsList'
 import CandidateJobApplication from './pages/CandidateJobApplication'
-import TestPage from './pages/TestPage'
 import Profile from './pages/Profile'
 
 const App = () => {
@@ -108,8 +107,6 @@ const App = () => {
           </Layout>
         </ProtectedRoute>
       } />
-
-      <Route path="/test" element={<TestPage />} />
     </Routes>
   )
 }
