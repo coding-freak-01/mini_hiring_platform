@@ -2,34 +2,41 @@
 
 A comprehensive hiring platform built with React, featuring job management, candidate tracking, assessment building, and a Kanban-style pipeline.
 
+---
+
 ## 🚀 Features
 
-### Core Functionality
-- **Jobs Board**: Create, edit, archive, and reorder jobs with drag-and-drop
-- **Candidates Management**: Virtualized list with search and filtering
-- **Kanban Pipeline**: Drag-and-drop candidate stage management
-- **Assessment Builder**: Create dynamic assessments with multiple question types
-- **Assessment Runtime**: Candidates can take assessments with validation
-- **Candidate Profiles**: Detailed profiles with timeline and notes
+### Core
+- **Jobs Board**: Create, edit, archive, and reorder jobs with drag-and-drop.
+- **Candidates**: Virtualized list with search & filters.
+- **Kanban Pipeline**: Drag candidates between stages (applied → hired).
+- **Assessments**: Build dynamic assessments with multiple question types.
+- **Assessment Runtime**: Candidates attempt assessments with validation.
+- **Profiles & Timeline**: Candidate details with stage history and notes.
 
-### Technical Features
-- **Real-time Persistence**: IndexedDB integration for data persistence
-- **Optimistic Updates**: Immediate UI updates with rollback on errors
-- **Error Handling**: 5-10% simulated error rate with proper error recovery
-- **Latency Simulation**: 200-1200ms response delays for realistic testing
-- **Responsive Design**: Mobile-first design with Tailwind CSS
-- **Accessibility**: Keyboard navigation and screen reader support
+### Technical
+- **IndexedDB persistence** with Dexie.
+- **Optimistic updates** with rollback on failure.
+- **Latency simulation** (200–1200ms) and random error rate (5–10%).
+- **Virtualized candidate list** for 1000+ entries.
+- **Responsive design** with Tailwind CSS.
+- **Accessibility**: Keyboard navigation & ARIA support.
 
-## 🛠️ Tech Stack
+---
 
-- **Frontend**: React 19, React Router, Tailwind CSS
+## 🛠 Tech Stack
+
+- **Frontend**: React 19 + Vite
 - **State Management**: Zustand
-- **Database**: IndexedDB (Dexie)
 - **API Mocking**: MirageJS
+- **Database**: IndexedDB (Dexie)
+- **Styling**: Tailwind CSS
 - **Drag & Drop**: @dnd-kit
-- **Forms**: React Hook Form + Yup validation
-- **Notifications**: React Hot Toast
+- **Forms & Validation**: React Hook Form + Yup
+- **Notifications**: react-hot-toast
 - **Icons**: Lucide React
+
+---
 
 ## 📦 Installation
 
@@ -61,22 +68,21 @@ UI Components → API Calls → MirageJS → IndexedDB
             Error Handling & Rollback
 ```
 
-### Key Components
+## 🧩 Components
 
-#### Jobs Management
-- **JobsBoard**: Main jobs listing with pagination, filtering, and sorting
-- **JobModal**: Create/edit job form with validation
-- **Drag & Drop**: Reorder jobs with optimistic updates
+### Jobs Management
+- **JobsBoard** → Job listings with pagination, filtering, and drag-and-drop reordering.  
+- **JobModal** → Modal form for creating and editing jobs.
 
-#### Candidates Management
-- **CandidatesList**: Virtualized list for performance with 1000+ candidates
-- **KanbanBoard**: Drag-and-drop pipeline management
-- **CandidateProfile**: Detailed candidate view with timeline and notes
+### Candidates Management
+- **CandidatesList** → Virtualized list for handling 1000+ candidates efficiently.  
+- **KanbanBoard** → Stage pipeline with drag-and-drop candidate movement.  
+- **CandidateProfile** → Detailed profile view including timeline and notes.
 
-#### Assessment System
-- **AssessmentBuilder**: Visual assessment creator with live preview
-- **AssessmentRuntime**: Candidate-facing assessment interface
-- **Question Types**: Short text, long text, single/multi-choice, numeric, file upload
+### Assessment System
+- **AssessmentBuilder** → Create and update assessments with multiple question types.  
+- **AssessmentRuntime** → Candidate-facing UI for taking assessments.
+
 
 ### API Endpoints
 
@@ -97,62 +103,7 @@ UI Components → API Calls → MirageJS → IndexedDB
 - `PUT /api/assessments/:jobId` - Save assessment
 - `POST /api/assessments/:jobId/submit` - Submit assessment response
 
-## 🎯 Key Features Implementation
-
-### 1. Optimistic Updates with Rollback
-```javascript
-// Jobs reordering with rollback
-const handleDragEnd = async (event) => {
-  // Optimistic update
-  const newJobs = arrayMove(jobs, oldIndex, newIndex)
-  setJobs(newJobs)
-
-  try {
-    const response = await fetch(`/api/jobs/${active.id}/reorder`, {
-      method: 'PATCH',
-      body: JSON.stringify({ fromOrder, toOrder })
-    })
-
-    if (!response.ok) {
-      // Rollback on error
-      setJobs(originalJobs)
-      toast.error('Reorder failed; reverted.')
-    }
-  } catch (error) {
-    setJobs(originalJobs)
-    toast.error('Reorder failed; reverted.')
-  }
-}
-```
-
-### 2. IndexedDB Persistence
-```javascript
-// Write-through to IndexedDB
-const job = schema.jobs.create(attrs)
-await db.jobs.put(job.attrs)
-```
-
-### 3. Error Simulation
-```javascript
-const shouldSimulateError = () => Math.random() < 0.08 // 8% error rate
-const simulateLatency = () => new Promise(resolve => 
-  setTimeout(resolve, Math.random() * 1000 + 200)
-)
-```
-
-### 4. Virtualized Lists
-```javascript
-import { FixedSizeList as List } from 'react-window'
-
-<List
-  height={600}
-  itemCount={candidates.length}
-  itemSize={80}
-  itemData={{ candidates, onViewProfile }}
->
-  {CandidateRow}
-</List>
-```
+---
 
 ## 🧪 Testing Features
 
@@ -173,60 +124,41 @@ import { FixedSizeList as List } from 'react-window'
 - **Touch-friendly**: Large touch targets for mobile interaction
 - **Accessibility**: ARIA labels, keyboard navigation, screen reader support
 
-## 🔧 Development
-
-### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-
-### Environment Variables
-- `VITE_API_MODE=mirage` - Use MirageJS for API mocking
-
-## 🚀 Deployment
-
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy the `dist` folder** to your hosting provider
-
-3. **Environment setup**
-   - No environment variables required for basic functionality
-   - IndexedDB works in all modern browsers
+---
 
 ## 📊 Performance Considerations
 
-### Virtualization
-- Candidates list uses `react-window` for 1000+ items
-- Only visible items are rendered
-- Smooth scrolling and interaction
+### Large Dataset Handling
+- Seeded with **1000+ candidates** and **25 jobs**, the app uses pagination and virtualization to avoid rendering bottlenecks.
+- Candidate list is powered by `react-window`, ensuring smooth scrolling even with thousands of entries.
 
-### Data Persistence
-- IndexedDB for client-side storage
-- Automatic data rehydration on app load
-- Write-through caching for reliability
+### IndexedDB Persistence
+- All MirageJS data is mirrored into **IndexedDB (Dexie)** for client-side persistence.
+- On refresh, the app rehydrates state from IndexedDB instead of losing progress.
+- This makes the app feel more "real-world" than a simple mock server.
 
-### Error Handling
-- Optimistic updates for better UX
-- Automatic rollback on errors
-- User-friendly error messages
+### Optimistic Updates & Rollback
+- Drag-and-drop reordering and stage updates apply changes instantly in the UI.
+- If MirageJS simulates an error (5–10% of the time), the store reverts to the previous stable state.
+- Provides a realistic testing ground for error handling without breaking flow.
 
-## 🎨 UI/UX Features
+### Query & Filtering Efficiency
+- Server-side style filtering for jobs (by title, tags, status) and candidates (by name, email, stage).
+- Keeps UI responsive by reducing the amount of data rendered at once.
 
-### Design System
-- **Colors**: Consistent color palette with semantic meaning
-- **Typography**: Inter font family for readability
-- **Spacing**: Consistent spacing scale
-- **Components**: Reusable component library
+### Latency Simulation
+- Responses include **200–1200ms artificial delay** to mimic real network requests.
+- Helps test spinners, skeleton loaders, and retry UX under realistic conditions.
 
-### Interactions
-- **Drag & Drop**: Smooth drag-and-drop with visual feedback
-- **Loading States**: Skeleton loaders and spinners
-- **Empty States**: Helpful empty state messages
-- **Error States**: Clear error messages with recovery options
+### Role-Based Rendering
+- Zustand’s persisted `auth-storage` keeps the logged-in user’s session across reloads.
+- Prevents unnecessary re-fetching for auth state and reduces wasted renders.
+
+### Lightweight State Management
+- Zustand stores are scoped (`useJobStore`, `useCandidateStore`, `useAssessmentStore`, `useAuthStore`) to minimize unnecessary global re-renders.
+- IndexedDB acts as a secondary cache, ensuring quick fallback if MirageJS errors occur.
+
+---
 
 ## 🔮 Future Enhancements
 
@@ -250,22 +182,6 @@ import { FixedSizeList as List } from 'react-window'
 2. **Real-time Updates**: No real-time collaboration features
 3. **Offline Support**: Limited offline functionality
 4. **Mobile Performance**: Some animations may be slow on older devices
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📞 Support
-
-For support or questions, please open an issue in the repository.
 
 ---
 
